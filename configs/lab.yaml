@@ -1,3 +1,4 @@
 scenarios_path: data/sample/scenarios.jsonl
 checkpointer: memory
-report_path: reports/lab_report.md
+# Auto stub from run-scenarios (human report lives in reports/lab_report.md)
+report_path: outputs/cli_report_stub.md
