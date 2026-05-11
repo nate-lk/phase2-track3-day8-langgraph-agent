@@ -22,15 +22,32 @@ dev = [
   "pytest-cov>=5.0",
   "ruff>=0.5.0",
   "mypy>=1.10",
+  "httpx>=0.28.0",
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "types-PyYAML>=6.0",
 ]
 sqlite = ["langgraph-checkpoint-sqlite>=2.0"]
 postgres = ["langgraph-checkpoint-postgres>=2.0"]
 
 [project.scripts]
 agent-lab = "langgraph_agent_lab.cli:app"
+agent-lab-api = "langgraph_agent_lab.api_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "langgraph.checkpoint.sqlite"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "langgraph.checkpoint.postgres"
+ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 100
@@ -39,6 +56,12 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "ANN"]
 ignore = ["ANN101", "ANN102"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN001", "ANN201", "E402", "E501"]
+"src/langgraph_agent_lab/api/app.py" = ["ANN401"]
+"src/langgraph_agent_lab/graph.py" = ["ANN401"]
+"src/langgraph_agent_lab/persistence.py" = ["ANN401"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"

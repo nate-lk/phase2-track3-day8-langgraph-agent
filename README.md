@@ -178,7 +178,12 @@ Pick one or more:
 | `make typecheck` | Run mypy type checker |
 | `make run-scenarios` | Execute all scenarios → `outputs/metrics.json` |
 | `make grade-local` | Validate metrics.json schema |
+| `make run-api` | Start FastAPI (`uvicorn`) on port 8000 for the React UI |
+| `make frontend-install` | `npm install` in `frontend/` |
+| `make frontend-dev` | Vite dev server (proxies `/api` → API) |
 | `make clean` | Remove caches and generated files |
+
+**Web UI:** In one terminal run `make run-api`, in another `make frontend-dev`, then open the URL Vite prints (usually `http://127.0.0.1:5173`). The React app uses **Tailwind CSS** and **shadcn/ui-style** primitives (see `frontend/components.json`); the ticket screen uses a **glassmorphic bento** layout with ITSM-style fields (priority, SLA strip, activity timeline, resolution tabs). Toggle “Human in the loop” and submit a risky ticket (e.g. contains “refund”) to exercise `interrupt()` and approval. The API uses the **memory** checkpointer by default (`LAB_CHECKPOINTER=memory`). For SQLite, install `pip install -e '.[sqlite]'`, set `LAB_CHECKPOINTER=sqlite` and optionally `LAB_DATABASE_URL=checkpoints.db`.
 
 ---
 

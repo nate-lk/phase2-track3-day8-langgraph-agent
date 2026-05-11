@@ -70,7 +70,8 @@ def tool_node(state: AgentState) -> dict:
     """
     attempt = int(state.get("attempt", 0))
     if state.get("route") == Route.ERROR.value and attempt < 2:
-        result = f"ERROR: transient failure attempt={attempt} scenario={state.get('scenario_id', 'unknown')}"
+        sid = state.get("scenario_id", "unknown")
+        result = f"ERROR: transient failure attempt={attempt} scenario={sid}"
     else:
         result = f"mock-tool-result for scenario={state.get('scenario_id', 'unknown')}"
     return {
@@ -100,7 +101,8 @@ def approval_node(state: AgentState) -> dict:
     """
     import os
 
-    if os.getenv("LANGGRAPH_INTERRUPT", "").lower() == "true":
+    use_hitl = os.getenv("LANGGRAPH_INTERRUPT", "").lower() == "true"
+    if use_hitl or state.get("use_interrupt") is True:
         from langgraph.types import interrupt
 
         value = interrupt({
@@ -156,9 +158,10 @@ def evaluate_node(state: AgentState) -> dict:
     tool_results = state.get("tool_results", [])
     latest = tool_results[-1] if tool_results else ""
     if "ERROR" in latest:
+        ev_msg = "tool result indicates failure, retry needed"
         return {
             "evaluation_result": "needs_retry",
-            "events": [make_event("evaluate", "completed", "tool result indicates failure, retry needed")],
+            "events": [make_event("evaluate", "completed", ev_msg)],
         }
     return {
         "evaluation_result": "success",
@@ -172,9 +175,11 @@ def dead_letter_node(state: AgentState) -> dict:
     Third layer of error strategy: retry -> fallback -> dead letter.
     TODO(student): persist to dead-letter queue, alert on-call, or create support ticket.
     """
+    msg = "Request could not be completed after maximum retry attempts. Logged for manual review."
+    att = state.get("attempt", 0)
     return {
-        "final_answer": "Request could not be completed after maximum retry attempts. Logged for manual review.",
-        "events": [make_event("dead_letter", "completed", f"max retries exceeded, attempt={state.get('attempt', 0)}")],
+        "final_answer": msg,
+        "events": [make_event("dead_letter", "completed", f"max retries exceeded, attempt={att}")],
     }
 
 

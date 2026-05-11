@@ -6,9 +6,9 @@ Students should extend the schema only when needed. Keep state lean and serializ
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Annotated, Any, TypedDict
-
 from operator import add
+from typing import Annotated, Any, NotRequired, TypedDict
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -61,6 +61,7 @@ class AgentState(TypedDict, total=False):
     tool_results: Annotated[list[str], add]
     errors: Annotated[list[str], add]
     events: Annotated[list[dict[str, Any]], add]
+    use_interrupt: NotRequired[bool]
 
 
 class Scenario(BaseModel):
@@ -78,6 +79,28 @@ class Scenario(BaseModel):
         if not value.strip():
             raise ValueError("query must not be empty")
         return value
+
+
+def ticket_initial_state(
+    query: str,
+    thread_id: str,
+    *,
+    max_attempts: int = 3,
+    use_interrupt: bool = False,
+) -> AgentState:
+    """Build initial state for ad-hoc runs (CLI scenarios use :func:`initial_state`)."""
+    base = initial_state(
+        Scenario(
+            id="adhoc",
+            query=query,
+            expected_route=Route.SIMPLE,
+            max_attempts=max_attempts,
+        )
+    )
+    base["thread_id"] = thread_id
+    if use_interrupt:
+        base["use_interrupt"] = True
+    return base
 
 
 def initial_state(scenario: Scenario) -> AgentState:
@@ -102,6 +125,11 @@ def initial_state(scenario: Scenario) -> AgentState:
     }
 
 
-def make_event(node: str, event_type: str, message: str, **metadata: Any) -> dict[str, Any]:
+def make_event(node: str, event_type: str, message: str, **metadata: Any) -> dict[str, Any]:  # noqa: ANN401
     """Create a normalized event payload."""
-    return LabEvent(node=node, event_type=event_type, message=message, metadata=metadata).model_dump()
+    return LabEvent(
+        node=node,
+        event_type=event_type,
+        message=message,
+        metadata=metadata,
+    ).model_dump()

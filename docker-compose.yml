@@ -1,4 +1,14 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      LAB_CHECKPOINTER: memory
+      CORS_ORIGINS: "http://127.0.0.1:5173,http://localhost:5173"
+
   postgres:
     image: postgres:16-alpine
     environment:
