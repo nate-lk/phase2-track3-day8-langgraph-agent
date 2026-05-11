@@ -33,7 +33,7 @@ class BatchTicketCreate(BaseModel):
     HITL interrupt is always off so each line can finish without resume.
     """
 
-    queries: list[str] = Field(min_length=1, max_length=50)
+    queries: list[str] = Field(min_length=1, max_length=100)
     max_attempts: int = Field(default=3, ge=1, le=20)
 
 
@@ -224,8 +224,8 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
                 status_code=400,
                 detail="Provide at least one non-empty query line.",
             )
-        if len(lines) > 50:
-            raise HTTPException(status_code=400, detail="Maximum 50 queries per batch.")
+        if len(lines) > 100:
+            raise HTTPException(status_code=400, detail="Maximum 100 queries per batch.")
 
         results: list[dict[str, Any]] = []
         errors: list[dict[str, Any]] = []

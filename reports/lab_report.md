@@ -81,7 +81,7 @@ Summary from `outputs/metrics.json` (regenerate with `make run-scenarios`):
 
 Beyond the core graph and metrics pipeline:
 
-- **FastAPI service** — health, Mermaid graph export, single-ticket create, **batch** ticket run (`POST /api/tickets/batch`, up to 50 lines, `use_interrupt` forced off per row so runs complete without resume).
+- **FastAPI service** — health, Mermaid graph export, single-ticket create, **batch** ticket run (`POST /api/tickets/batch`, up to 100 lines, `use_interrupt` forced off per row so runs complete without resume).
 - **React frontend** — ITSM-style **bento** layout, glass styling, shadcn-style primitives, **light/dark** theme persisted in `localStorage`, navbar with **Single ticket** vs **Batch run** tabs.
 - **Persistence options** — `memory`, `sqlite`, stub `postgres` branch in `build_checkpointer`.
 - **Ops** — `Makefile` targets (`run-api`, `frontend-dev`, etc.), **Docker** API image and **docker-compose** service, CI including frontend build, **pytest** coverage for API including batch behavior.

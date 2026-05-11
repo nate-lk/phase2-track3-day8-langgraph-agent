@@ -62,7 +62,12 @@ export function BatchWorkspace() {
   const [last, setLast] = useState<BatchResponse | null>(null);
 
   const run = useCallback(async () => {
-    const lines = raw.split("\n").map((l) => l.trim());
+    const lines = raw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+    if (!lines.length) {
+      setError("Add at least one non-empty line.");
+      setLast(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -86,8 +91,9 @@ export function BatchWorkspace() {
               Batch input
             </CardTitle>
             <CardDescription>
-              One question per line. Each line runs as its own <span className="font-mono">thread_id</span>{" "}
-              through the same graph as the single-ticket tab.
+              One question per line (blank lines are ignored). Each line runs as its own{" "}
+              <span className="font-mono">thread_id</span> through the same graph as the single-ticket tab. Up to{" "}
+              <span className="font-mono">100</span> lines per run.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -136,7 +142,7 @@ export function BatchWorkspace() {
                   Last run: <span className="font-mono">{last.count}</span> completed
                   {last.errors.length > 0 ? (
                     <>
-                      , <span className="text-destructive">{last.errors.length}</span> errors
+                      , <span className="text-destructive">{last.errors.length}</span> failed (see below)
                     </>
                   ) : null}
                 </>
@@ -151,62 +157,94 @@ export function BatchWorkspace() {
                 No results yet.
               </p>
             ) : (
-              <ScrollArea className="h-[min(70vh,520px)] rounded-lg border border-border/50">
-                <table className="w-full min-w-[720px] text-left text-sm">
-                  <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
-                    <tr className="border-b border-border/60 text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="px-3 py-2 font-medium">#</th>
-                      <th className="px-3 py-2 font-medium">Query</th>
-                      <th className="px-3 py-2 font-medium">Route</th>
-                      <th className="px-3 py-2 font-medium">Risk</th>
-                      <th className="px-3 py-2 font-medium">Status</th>
-                      <th className="px-3 py-2 font-medium">Answer preview</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {last.results.map((row) => {
-                      const st = row.state ?? {};
-                      const route = typeof st.route === "string" ? st.route : "—";
-                      const risk = typeof st.risk_level === "string" ? st.risk_level : "—";
-                      const fa = typeof st.final_answer === "string" ? st.final_answer : null;
-                      const pq = typeof st.pending_question === "string" ? st.pending_question : null;
-                      const preview = previewText(fa ?? pq, 72);
-                      return (
-                        <tr
-                          key={`${row.index}-${row.thread_id}`}
-                          className="border-b border-border/40 odd:bg-muted/20"
-                        >
-                          <td className="px-3 py-2 align-top font-mono text-xs text-muted-foreground">
-                            {row.index + 1}
-                          </td>
-                          <td className="max-w-[220px] px-3 py-2 align-top text-xs">{row.query}</td>
-                          <td className="px-3 py-2 align-top">
-                            <Badge variant="secondary" className="capitalize">
-                              {route.replaceAll("_", " ")}
-                            </Badge>
-                          </td>
-                          <td className="px-3 py-2 align-top">
-                            <span
-                              className={cn(
-                                "text-xs font-medium",
-                                risk === "high" ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground",
-                              )}
-                            >
-                              {risk}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 align-top">
-                            <Badge variant={row.status === "completed" ? "success" : "warning"}>
-                              {row.status}
-                            </Badge>
-                          </td>
-                          <td className="px-3 py-2 align-top text-xs text-muted-foreground">{preview}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </ScrollArea>
+              <div className="space-y-6">
+                <ScrollArea className="h-[min(80vh,640px)] rounded-lg border border-border/50">
+                  <table className="w-full min-w-[720px] text-left text-sm">
+                    <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
+                      <tr className="border-b border-border/60 text-xs uppercase tracking-wide text-muted-foreground">
+                        <th className="px-3 py-2 font-medium">#</th>
+                        <th className="px-3 py-2 font-medium">Query</th>
+                        <th className="px-3 py-2 font-medium">Route</th>
+                        <th className="px-3 py-2 font-medium">Risk</th>
+                        <th className="px-3 py-2 font-medium">Status</th>
+                        <th className="px-3 py-2 font-medium">Answer preview</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {last.results.map((row) => {
+                        const st = row.state ?? {};
+                        const route = typeof st.route === "string" ? st.route : "—";
+                        const risk = typeof st.risk_level === "string" ? st.risk_level : "—";
+                        const fa = typeof st.final_answer === "string" ? st.final_answer : null;
+                        const pq = typeof st.pending_question === "string" ? st.pending_question : null;
+                        const preview = previewText(fa ?? pq, 72);
+                        return (
+                          <tr
+                            key={`${row.index}-${row.thread_id}`}
+                            className="border-b border-border/40 odd:bg-muted/20"
+                          >
+                            <td className="px-3 py-2 align-top font-mono text-xs text-muted-foreground">
+                              {row.index + 1}
+                            </td>
+                            <td className="max-w-[220px] px-3 py-2 align-top text-xs">{row.query}</td>
+                            <td className="px-3 py-2 align-top">
+                              <Badge variant="secondary" className="capitalize">
+                                {route.replaceAll("_", " ")}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2 align-top">
+                              <span
+                                className={cn(
+                                  "text-xs font-medium",
+                                  risk === "high" ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground",
+                                )}
+                              >
+                                {risk}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 align-top">
+                              <Badge variant={row.status === "completed" ? "success" : "warning"}>
+                                {row.status}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2 align-top text-xs text-muted-foreground">{preview}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </ScrollArea>
+
+                {last.errors.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-destructive">Rows that raised an exception</p>
+                    <ScrollArea className="max-h-[min(40vh,280px)] rounded-lg border border-destructive/30 bg-destructive/5">
+                      <table className="w-full min-w-[560px] text-left text-sm">
+                        <thead className="sticky top-0 z-10 bg-destructive/10 backdrop-blur-sm">
+                          <tr className="border-b border-destructive/20 text-xs uppercase tracking-wide text-muted-foreground">
+                            <th className="px-3 py-2 font-medium">#</th>
+                            <th className="px-3 py-2 font-medium">Query</th>
+                            <th className="px-3 py-2 font-medium">Detail</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {last.errors.map((row) => (
+                            <tr key={`err-${row.index}-${String(row.detail)}`} className="border-b border-destructive/10">
+                              <td className="px-3 py-2 align-top font-mono text-xs text-muted-foreground">
+                                {row.index + 1}
+                              </td>
+                              <td className="max-w-[240px] px-3 py-2 align-top text-xs">{row.query}</td>
+                              <td className="px-3 py-2 align-top text-xs text-destructive">
+                                {typeof row.detail === "string" ? row.detail : JSON.stringify(row.detail)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </ScrollArea>
+                  </div>
+                ) : null}
+              </div>
             )}
           </CardContent>
         </Card>

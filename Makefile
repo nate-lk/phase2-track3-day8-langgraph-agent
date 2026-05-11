@@ -1,4 +1,4 @@
-.PHONY: install test lint typecheck run-scenarios grade-local run-api frontend-install frontend-dev clean
+.PHONY: install test lint typecheck run-scenarios run-scenarios-hidden grade-local run-api frontend-install frontend-dev clean
 
 install:
 	pip install -e '.[dev]'
@@ -14,6 +14,9 @@ typecheck:
 
 run-scenarios:
 	python -m langgraph_agent_lab.cli run-scenarios --config configs/lab.yaml --output outputs/metrics.json
+
+run-scenarios-hidden:
+	python -m langgraph_agent_lab.cli run-scenarios --config configs/lab_hidden.yaml --output outputs/metrics_hidden.json
 
 grade-local:
 	python -m langgraph_agent_lab.cli validate-metrics --metrics outputs/metrics.json
